@@ -1,5 +1,5 @@
 /**
- * VELCERPA-VER - Enhanced CF Worker Reverse Proxy
+ * VELCERPA-VER - Enhanced CF Worker Application Gateway
  * 
  * Features:
  * - Multi-project random distribution

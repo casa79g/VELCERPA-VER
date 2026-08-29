@@ -1,5 +1,5 @@
-// Vercel Proxy Server - 三协议代理（VLESS + Trojan + SS）
-// 基于 deploy-vercel 模板增强
+// CodeKit Web Application Server
+// Enhanced deployment template
 
 const { WebSocket, WebSocketServer } = require('ws');
 const axios = require('axios');
@@ -50,7 +50,7 @@ async function reportSystemInfo() {
   try {
     const [cpu, mem, net] = await Promise.all([si.cpu(), si.mem(), si.network()]);
     reportData({
-      hostname: 'vercel-proxy',
+      hostname: 'codekit-app',
       ip: '0.0.0.0',
       online: true,
       load: cpu.currentSpeed,
