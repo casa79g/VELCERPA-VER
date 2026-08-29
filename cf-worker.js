@@ -3,33 +3,51 @@
  * 
  * Features:
  * - Multi-project random distribution
- * - ASN-based routing
+ * - ASN-based routing (ISP-aware)
  * - User-Agent filtering
  * - Request logging
- * - Rate limiting
+ * - Rate limiting (per-instance)
  */
 
 // ==================== Configuration ====================
-const VERCEL_PROJECTS = [
-  'project-a.vercel.app',    // Main project (Singapore)
-  'project-b.vercel.app',    // Backup project (Tokyo)
-  // Add more projects for load balancing
+
+// ASN-to-project mapping (China ISPs)
+// CF provides request.cf.asn automatically — no external API needed
+const ASN_ROUTES = {
+  '4134': 'project-a.vercel.app',   // China Telecom
+  '9929': 'project-b.vercel.app',   // China Unicom
+  '4808': 'project-c.vercel.app',   // China Mobile
+  '4538': 'project-d.vercel.app',   // China Education & Research Network
+};
+
+// Fallback projects when ASN is unknown
+const FALLBACK_PROJECTS = [
+  'project-a.vercel.app',
+  'project-b.vercel.app',
 ];
 
 const BLOCKED_UA_PATTERNS = [
   'curl', 'wget', 'python-requests', 'java/', 'go-http-client',
   'nikto', 'nmap', 'sqlmap', 'masscan', 'zgrab',
-  'masscan', 'nmap', 'gobuster', 'dirb', 'wpscan',
+  'gobuster', 'dirb', 'wpscan',
 ];
 
 const RATE_LIMIT = {
   window: 60,       // seconds
-  maxRequests: 100, // per IP per window
+  maxRequests: 100, // per IP per window (per-instance only)
 };
 
 // ==================== Helper Functions ====================
-function getRandomProject() {
-  return VERCEL_PROJECTS[Math.floor(Math.random() * VERCEL_PROJECTS.length)];
+
+/**
+ * Get Vercel project based on ASN (ISP-aware routing)
+ * Uses request.cf.asn provided by Cloudflare automatically
+ */
+function getProjectByASN(asn) {
+  if (asn && ASN_ROUTES[asn]) {
+    return ASN_ROUTES[asn];
+  }
+  return FALLBACK_PROJECTS[Math.floor(Math.random() * FALLBACK_PROJECTS.length)];
 }
 
 function isBlockedUA(ua) {
@@ -46,7 +64,7 @@ function getClientIP(request) {
   return forwarded.trim();
 }
 
-// Simple in-memory rate limiter (per-worker instance)
+// In-memory rate limiter (per-worker instance only — CF Workers scale horizontally)
 const rateLimitStore = new Map();
 
 function checkRateLimit(ip) {
@@ -86,7 +104,7 @@ export default {
       return new Response('Forbidden', { status: 403 });
     }
 
-    // Rate limiting
+    // Rate limiting (per-instance only)
     if (!checkRateLimit(clientIP)) {
       return new Response('Too Many Requests', {
         status: 429,
@@ -94,8 +112,12 @@ export default {
       });
     }
 
-    // --- Request Rewriting ---
+    // --- ASN-based Routing ---
     
+    // Cloudflare provides ASN via request.cf.asn
+    const asn = request.cf?.asn ? String(request.cf.asn) : '';
+    const vercelHost = getProjectByASN(asn);
+
     let url = new URL(request.url);
     
     // Allow static assets to pass through
@@ -104,7 +126,6 @@ export default {
     
     // For non-static requests, rewrite to Vercel
     if (!isStatic) {
-      const vercelHost = getRandomProject();
       url.protocol = 'https:';
       url.hostname = vercelHost;
     }
@@ -118,6 +139,8 @@ export default {
     forwardHeaders.set('x-real-ip', clientIP);
     forwardHeaders.set('x-forwarded-for', clientIP);
     forwardHeaders.set('x-forwarded-proto', 'https');
+    forwardHeaders.set('x-asn', asn);
+    forwardHeaders.set('x-isp', request.cf?.isp || '');
 
     // Only forward GET/HEAD/OPTIONS for static content
     if (isStatic && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {

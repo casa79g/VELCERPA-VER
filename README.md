@@ -46,7 +46,9 @@ VELCERPA-VER/
 
 1. Cloudflare → Workers & Pages → Create Worker
 2. 将 `cf-worker.js` 内容粘贴进去
-3. 修改 `VERCEL_PROJECTS` 中的 Vercel 域名
+3. 修改 `cf-worker.js` 中的路由配置：
+   - `ASN_ROUTES`：ASN 到 Vercel 项目的映射（中国电信→项目A，联通→项目B）
+   - `FALLBACK_PROJECTS`：未知 ASN 时的备用项目列表
 4. 部署 Worker
 5. 添加自定义域名（DNS → 加一条 CNAME 指向 Worker）
 
@@ -68,11 +70,32 @@ VELCERPA-VER/
 | SUB_PATH | API 路径 | ❌ |
 | NAME | 应用名前缀 | ❌ |
 
-## 注意事项
+## CF Worker 配置说明
 
-- Vercel 免费版 maxDuration 300 秒
+### ASN 路由（运营商感知）
+
+CF Worker 自动获取访问者的 ASN（`request.cf.asn`），根据运营商路由到对应项目：
+
+| ASN | 运营商 | 示例配置 |
+|-----|--------|---------|
+| 4134 | 中国电信 | `project-a.vercel.app` |
+| 9929 | 中国联通 | `project-b.vercel.app` |
+| 4808 | 中国移动 | `project-c.vercel.app` |
+| 4538 | 教育网 | `project-d.vercel.app` |
+| 其他 | 未知/国外 | 随机分发到 `FALLBACK_PROJECTS` |
+
+修改 `cf-worker.js` 中的 `ASN_ROUTES` 对象即可调整映射关系。
+
+### 限流说明
+
+- 限流基于内存 `Map`，**仅对单实例有效**
+- CF Worker 会水平扩展，多个实例之间不共享状态
+- 如需全局限流，需使用 CF Rate Limiting 规则或 KV 存储
+
+### 注意事项
+
+- Vercel 免费版 maxDuration 300 秒（仅 Pro 及以上套餐生效）
 - 免费版禁止商业用途
-- 连接超过 300 秒会被切断
 - 监控模块注意不暴露真实 IP
 
 ---
