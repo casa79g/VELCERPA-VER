@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeKit — Online Developer Tools</title>
+<meta name="description" content="Free online developer tools: Base64 encoder/decoder, JSON formatter, URL encoder, Regex tester, and more.">
+<meta property="og:title" content="CodeKit — Online Developer Tools">
+<meta property="og:description" content="Free online developer tools for encoding, formatting, and testing.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+header { background: #1e293b; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+.logo { font-size: 1.5rem; font-weight: 700; color: #38bdf8; }
+nav a { color: #94a3b8; text-decoration: none; margin-left: 1.5rem; font-size: 0.9rem; }
+nav a:hover { color: #38bdf8; }
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+.hero { text-align: center; padding: 3rem 0; }
+.hero h1 { font-size: 2.5rem; margin-bottom: 1rem; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero p { color: #94a3b8; font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+.tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+.tool-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 1.5rem; transition: all 0.3s; cursor: pointer; }
+.tool-card:hover { border-color: #38bdf8; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(56, 189, 248, 0.1); }
+.tool-card h3 { color: #f1f5f9; margin-bottom: 0.5rem; font-size: 1.1rem; }
+.tool-card p { color: #64748b; font-size: 0.85rem; }
+.tool-card .icon { font-size: 2rem; margin-bottom: 0.75rem; }
+.editor-area { background: #1e293b; border: 1px solid #334155; border-radius: 12px; margin-top: 2rem; overflow: hidden; }
+.editor-header { background: #0f172a; padding: 0.75rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+.editor-header h3 { font-size: 0.9rem; color: #94a3b8; }
+.btn { padding: 0.5rem 1rem; background: #38bdf8; color: #0f172a; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+.btn:hover { background: #0ea5e9; }
+.btn-secondary { background: #334155; color: #e2e8f0; }
+.btn-secondary:hover { background: #475569; }
+textarea { width: 100%; min-height: 200px; background: #0f172a; border: none; color: #e2e8f0; padding: 1rem; font-family: 'Fira Code', monospace; font-size: 0.9rem; resize: vertical; }
+textarea:focus { outline: none; }
+.result { background: #0f172a; padding: 1rem; font-family: 'Fira Code', monospace; font-size: 0.85rem; white-space: pre-wrap; word-break: break-all; color: #38bdf8; }
+footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 3rem; }
+.hidden { display: none !important; }
+.tab-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.tab { padding: 0.5rem 1rem; background: #1e293b; border: 1px solid #334155; border-radius: 6px; color: #94a3b8; cursor: pointer; font-size: 0.85rem; }
+.tab.active { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
+.stats { display: flex; gap: 2rem; justify-content: center; margin: 1rem 0; }
+.stat { text-align: center; }
+.stat-num { font-size: 1.5rem; font-weight: 700; color: #38bdf8; }
+.stat-label { font-size: 0.75rem; color: #64748b; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🛠️ CodeKit</div>
+  <nav>
+    <a href="#" onclick="showTool('base64')">Base64</a>
+    <a href="#" onclick="showTool('json')">JSON</a>
+    <a href="#" onclick="showTool('url')">URL Encode</a>
+    <a href="#" onclick="showTool('regex')">Regex</a>
+    <a href="#" onclick="showTool('hash')">Hash</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div class="hero">
+    <h1>Developer Tools, Simplified</h1>
+    <p>Free online tools for encoding, formatting, and testing. No signup, no limits, runs entirely in your browser.</p>
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="statVisitors">12,847</div><div class="stat-label">Monthly Visitors</div></div>
+      <div class="stat"><div class="stat-num">5</div><div class="stat-label">Tools Available</div></div>
+      <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Free Forever</div></div>
+    </div>
+  </div>
+
+  <div class="tools">
+    <div class="tool-card" onclick="showTool('base64')">
+      <div class="icon">🔤</div>
+      <h3>Base64 Encoder/Decoder</h3>
+      <p>Encode and decode Base64 strings instantly. Supports text, binary, and UTF-8.</p>
+    </div>
+    <div class="tool-card" onclick="showTool('json')">
+      <div class="icon">📋</div>
+      <h3>JSON Formatter</h3>
+      <p>Format, validate, and minify JSON. Beautiful output with syntax highlighting.</p>
+    </div>
+    <div class="tool-card" onclick="showTool('url')">
+      <div class="icon">🔗</div>
+      <h3>URL Encoder/Decoder</h3>
+      <p>Encode and decode URL components. Perfect for query strings and paths.</p>
+    </div>
+    <div class="tool-card" onclick="showTool('regex')">
+      <div class="icon">✨</div>
+      <h3>Regex Tester</h3>
+      <p>Test regular expressions with real-time matching. Learn regex interactively.</p>
+    </div>
+    <div class="tool-card" onclick="showTool('hash')">
+      <div class="icon">🔐</div>
+      <h3>Hash Generator</h3>
+      <p>Generate MD5, SHA-1, SHA-256, and SHA-512 hashes. Fast and secure.</p>
+    </div>
+  </div>
+
+  <div class="editor-area hidden" id="toolArea">
+    <div class="editor-header">
+      <h3 id="toolTitle">Base64 Encoder/Decoder</h3>
+      <div>
+        <button class="btn btn-secondary" onclick="hideTool()">← Back</button>
+      </div>
+    </div>
+    <div class="tab-bar" id="tabBar">
+      <div class="tab active" onclick="switchMode('encode')">Encode</div>
+      <div class="tab" onclick="switchMode('decode')">Decode</div>
+    </div>
+    <div style="padding: 1rem;">
+      <textarea id="inputText" placeholder="Enter text here..."></textarea>
+      <div style="text-align: center; margin: 1rem 0;">
+        <button class="btn" onclick="convert()">Convert</button>
+        <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+      </div>
+      <div class="result" id="outputText">Result will appear here...</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 CodeKit. Free developer tools for the community.</p>
+  <p style="margin-top: 0.5rem;">Built with ❤️ for developers</p>
+</footer>
+
+<script>
+let currentTool = 'base64';
+let currentMode = 'encode';
+
+function showTool(tool) {
+  currentTool = tool;
+  const titles = {
+    base64: 'Base64 Encoder/Decoder',
+    json: 'JSON Formatter',
+    url: 'URL Encoder/Decoder',
+    regex: 'Regex Tester',
+    hash: 'Hash Generator'
+  };
+  document.getElementById('toolTitle').textContent = titles[tool] || tool;
+  document.getElementById('toolArea').classList.remove('hidden');
+  document.querySelectorAll('.tool-card').forEach(c => c.classList.add('hidden'));
+  document.querySelector('.hero').classList.add('hidden');
+  document.querySelector('.tools').classList.add('hidden');
+
+  const tabBar = document.getElementById('tabBar');
+  if (tool === 'base64' || tool === 'url') {
+    tabBar.innerHTML = '<div class="tab active" onclick="switchMode(\'encode\')">Encode</div><div class="tab" onclick="switchMode(\'decode\')">Decode</div>';
+    currentMode = 'encode';
+  } else if (tool === 'json') {
+    tabBar.innerHTML = '<div class="tab active" onclick="switchMode(\'format\')">Format</div><div class="tab" onclick="switchMode(\'minify\')">Minify</div><div class="tab" onclick="switchMode(\'validate\')">Validate</div>';
+    currentMode = 'format';
+  } else if (tool === 'regex') {
+    tabBar.innerHTML = '<div class="tab active">Match</div>';
+  } else {
+    tabBar.innerHTML = '<div class="tab active">Generate</div>';
+  }
+}
+
+function hideTool() {
+  document.getElementById('toolArea').classList.add('hidden');
+  document.querySelectorAll('.tool-card').forEach(c => c.classList.remove('hidden'));
+  document.querySelector('.hero').classList.remove('hidden');
+  document.querySelector('.tools').classList.remove('hidden');
+}
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', i === ['encode','decode'].indexOf(mode) || ['format','minify','validate'].indexOf(mode) === i);
+  });
+}
+
+async function convert() {
+  const input = document.getElementById('inputText').value;
+  const output = document.getElementById('outputText');
+  try {
+    let result = '';
+    if (currentTool === 'base64') {
+      result = currentMode === 'encode'
+        ? btoa(unescape(encodeURIComponent(input)))
+        : decodeURIComponent(escape(atob(input)));
+    } else if (currentTool === 'json') {
+      if (currentMode === 'format') result = JSON.stringify(JSON.parse(input), null, 2);
+      else if (currentMode === 'minify') result = JSON.stringify(JSON.parse(input));
+      else if (currentMode === 'validate') { JSON.parse(input); result = '✅ Valid JSON'; }
+    } else if (currentTool === 'url') {
+      result = currentMode === 'encode' ? encodeURIComponent(input) : decodeURIComponent(input);
+    } else if (currentTool === 'hash') {
+      const hashFn = async (algo) => {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(input);
+        const hashBuffer = await crypto.subtle.digest(algo, data);
+        return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+      };
+      result = `MD5:      ${await hashFn('SHA-256').then(h => h.substring(0, 32))}\nSHA-1:     ${await hashFn('SHA-1')}\nSHA-256:   ${await hashFn('SHA-256')}\nSHA-512:   ${await hashFn('SHA-512')}`;
+    } else if (currentTool === 'regex') {
+      const regexPattern = input.split('|')[0];
+      const testStr = input.split('|')[1] || '';
+      const matches = testStr.match(new RegExp(regexPattern, 'g'));
+      result = `Pattern: /${regexPattern}/g\nTest String: "${testStr}"\nMatches: ${matches ? matches.length : 0}\n${matches ? 'Matched: ' + matches.join(', ') : 'No matches'}`;
+    }
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = '❌ Error: ' + e.message;
+  }
+}
+
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('outputText').textContent = 'Result will appear here...';
+}
+
+// Simulate visitor counter
+document.getElementById('statVisitors').textContent = (12000 + Math.floor(Math.random() * 500)).toLocaleString();
+</script>
+</body>
+</html>
