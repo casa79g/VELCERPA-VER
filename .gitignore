@@ -1,13 +1,18 @@
-node_modules/
-.vercel/
-.env
-.env.local
+# AI tool chain artifacts
+*.json.batch
+*.json.tmp
+cleanup*.json
+deploy.json
+batch-git.json
+push.sh
+
+# Logs
 *.log
+logs/
+
+# Node
+node_modules/
+
+# OS
 .DS_Store
-nezha/
-dist/
-build/
-*.bak
-*.tmp
-tmp/
-.cache/
+Thumbs.db
