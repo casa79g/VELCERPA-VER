@@ -40,7 +40,7 @@ function getFakePage() {
   }
 }
 
-function createHTTPResponse(req) {
+function handleHTTP(req) {
   const url = new URL(req.url, `https://${req.headers.host || DOMAIN}`);
   const hostname = req.headers['x-forwarded-host'] || req.headers.host || DOMAIN;
 
@@ -53,7 +53,7 @@ function createHTTPResponse(req) {
     };
   }
 
-  // Subscription generation
+  // Subscription
   if (req.method === 'GET' && url.pathname === SUB_PATH) {
     let sub = '';
     for (let i = 0; i < UUIDS.length; i++) {
@@ -72,12 +72,12 @@ function createHTTPResponse(req) {
     };
   }
 
-  // Blocked: speedtest domains
+  // Blocked hosts
   if (hostname.includes('speedtest') || hostname.includes('ookla')) {
     return { status: 403, headers: { 'Content-Type': 'text/plain' }, body: 'Forbidden' };
   }
 
-  // Default: return fake page
+  // Default
   return {
     status: 200,
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
@@ -85,17 +85,15 @@ function createHTTPResponse(req) {
   };
 }
 
-// ==================== WebSocket Server ====================
+// ==================== WebSocket ====================
 const wss = new WebSocket.Server({ noServer: true });
 
 wss.on('connection', (ws, request) => {
   const url = new URL(request.url, `https://${request.headers.host || DOMAIN}`);
   const hostname = request.headers['x-forwarded-host'] || request.headers.host || DOMAIN;
-  const wsPath = url.pathname;
 
   // Validate UUID in path
-  const uuidMatch = UUIDS.find(u => wsPath.includes(u));
-  if (!uuidMatch) {
+  if (!UUIDS.some(u => url.pathname.includes(u))) {
     ws.close(4001, 'Invalid path');
     return;
   }
@@ -104,13 +102,13 @@ wss.on('connection', (ws, request) => {
     try {
       const response = await axios({
         method: 'GET',
-        url: `https://${hostname}${wsPath}`,
+        url: `https://${hostname}${url.pathname}`,
         headers: {
           'User-Agent': request.headers['user-agent'] || '',
           'Accept': request.headers['accept'] || '*/*',
         },
         responseType: 'arraybuffer',
-        timeout: 30000, // 30 seconds max per request
+        timeout: 30000,
       });
       ws.send(Buffer.from(response.data));
     } catch (e) {
@@ -118,28 +116,30 @@ wss.on('connection', (ws, request) => {
     }
   });
 
-  ws.on('error', () => { /* Silently close on error */ });
+  ws.on('error', () => { /* Silent */ });
   ws.on('close', () => ws.terminate());
 });
 
 // ==================== Vercel Handler ====================
-module.exports = async (req, res) => {
-  // Handle WebSocket upgrade
+module.exports = (req, res) => {
+  // WebSocket upgrade — MUST handle before HTTP
   if (req.headers.upgrade && req.headers.upgrade.toLowerCase() === 'websocket') {
-    try {
-      wss.handleUpgrade(req, req.socket, Buffer.from(''), (ws) => {
-        wss.emit('connection', ws, req);
-      });
-    } catch (e) {
-      return new Response('Internal Error', { status: 500 });
+    const url = new URL(req.url, `https://${req.headers.host || DOMAIN}`);
+    const isValid = UUIDS.some(u => url.pathname.includes(u));
+    if (!isValid) {
+      res.writeHead(403);
+      res.end('Forbidden');
+      return;
     }
-    return; // WebSocket handled manually, don't send Response
+    // wss.handleUpgrade writes the 101 response to socket directly
+    wss.handleUpgrade(req, req.socket, Buffer.from(''), (ws) => {
+      wss.emit('connection', ws, req);
+    });
+    return;
   }
 
-  // Handle HTTP requests
-  const result = createHTTPResponse(req);
-  return new Response(result.body, {
-    status: result.status,
-    headers: result.headers,
-  });
+  // HTTP request
+  const result = handleHTTP(req);
+  res.writeHead(result.status, result.headers);
+  res.end(result.body);
 };
