@@ -1,0 +1,9 @@
+[
+  {
+    "tool_name": "execute_shell_command",
+    "arguments": {
+      "command": "cd /workspace/VELCERPA-VER && git rm --cached batch-git.json push.sh cleanup.json cleanup2.json deploy.json 2>/dev/null; rm -f batch-git.json push.sh cleanup.json cleanup2.json deploy.json; git add -A && git commit -m \"chore: remove AI tool chain artifacts\" && git push origin main",
+      "cwd": "/workspace/VELCERPA-VER"
+    }
+  }
+]

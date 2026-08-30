@@ -1,9 +1,0 @@
-[
-  {
-    "tool_name": "execute_shell_command",
-    "arguments": {
-      "command": "rm /workspace/VELCERPA-VER/batch-git.json /workspace/VELCERPA-VER/push.sh",
-      "cwd": "/workspace/VELCERPA-VER"
-    }
-  }
-]
