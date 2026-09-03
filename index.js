@@ -1,5 +1,17 @@
 // CodeKit Web Application Server
 // Enhanced deployment template
+// ╔══════════════════════════════════════════════════════════════╗
+// ║ 📋 部署前必改 (建议通过 Vercel 环境变量设置, 代码只作兜底)   ║
+// ║                                                              ║
+// ║  [必改①] UUID    → Vercel 环境变量 UUID 设你的节点UUID       ║
+// ║  [必改②] DOMAIN  → Vercel 环境变量 DOMAIN 设反代域名        ║
+// ║            (不含 https://, 如 xxx.vercel.app)                ║
+// ║  [可选③] SUB_PATH → 订阅路径 (默认 /vercel)                  ║
+// ║  [可选④] WSPATH   → WS 路径 (默认 = UUID, 一般不用改)        ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// CodeKit Web Application Server
+// Enhanced deployment template
 
 const WebSocket = require('ws');
 const crypto = require('crypto');
@@ -8,10 +20,10 @@ const fs = require('fs');
 const path = require('path');
 
 // ==================== Environment Variables ====================
-const UUID = process.env.UUID || 'CHANGE_ME';
-const DOMAIN = process.env.DOMAIN || 'xxx.vercel.app';
-const SUB_PATH = process.env.SUB_PATH || '/vercel';
-const WSPATH = process.env.WSPATH || UUID;
+const UUID = process.env.UUID || 'CHANGE_ME';   // [必改①] 节点 UUID (环境变量 UUID 覆盖)
+const DOMAIN = process.env.DOMAIN || 'xxx.vercel.app';   // [必改②] 反代域名, 不含 https:// (环境变量 DOMAIN 覆盖)
+const SUB_PATH = process.env.SUB_PATH || '/vercel';   // [可选③] 订阅路径 (环境变量 SUB_PATH 覆盖)
+const WSPATH = process.env.WSPATH || UUID;   // [可选④] WS 路径 (环境变量 WSPATH 覆盖)
 
 // ==================== Utilities ====================
 const UUIDS = UUID.split(',').map(u => u.trim()).filter(u => u);
