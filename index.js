@@ -128,9 +128,10 @@ function startPipe(ws, host, port, initialData) {
     finish(false);
     return;
   }
+  // 立即接管后续消息 (write 在连接建立前会自动缓冲)
+  ws.on('message', onMsg);
   socket.on('connect', () => {
     if (initialData && initialData.length) socket.write(initialData);
-    ws.on('message', onMsg);
   });
   socket.on('data', (d) => {
     try { if (ws.readyState === WebSocket.OPEN) ws.send(d); } catch (e) {}
@@ -142,7 +143,7 @@ function startPipe(ws, host, port, initialData) {
 }
 
 // ---- VLESS ----
-async function handleVless(ws, buf, uuid) {
+function handleVless(ws, buf, uuid) {
   try {
     const ub = uuidBytes(uuid);
     if (buf.length < 18 || buf[0] !== 0) return false;
@@ -169,7 +170,7 @@ async function handleVless(ws, buf, uuid) {
 }
 
 // ---- Trojan (SHA224 密码哈希认证) ----
-async function handleTrojan(ws, buf, uuid) {
+function handleTrojan(ws, buf, uuid) {
   try {
     if (buf.length < 58) return false;
     const recvHash = buf.slice(0, 56).toString('ascii');
@@ -198,7 +199,7 @@ async function handleTrojan(ws, buf, uuid) {
 }
 
 // ---- Shadowsocks (none 档: ATYP + 端口) ----
-async function handleSS(ws, buf) {
+function handleSS(ws, buf) {
   try {
     if (buf.length < 7) return false;
     let offset = 0;
@@ -238,17 +239,27 @@ wss.on('connection', (ws, request) => {
   }
 
   // 等首包 → 协议识别分流 (VLESS / Trojan / SS)
+  // ⚠️ 命中后必须移除本监听, 否则后续数据包会反复触发协议解析导致连接错乱
   const onFirst = (buf) => {
     try {
       if (!(buf instanceof Buffer)) return;
+      let handled = false;
       for (const u of UUIDS) {
-        if (buf.length > 17 && buf[0] === 0 && handleVless(ws, buf, u)) return;
+        if (buf.length > 17 && buf[0] === 0 && handleVless(ws, buf, u)) { handled = true; break; }
       }
-      for (const u of UUIDS) {
-        if (buf.length >= 58 && handleTrojan(ws, buf, u)) return;
+      if (!handled) {
+        for (const u of UUIDS) {
+          if (buf.length >= 58 && handleTrojan(ws, buf, u)) { handled = true; break; }
+        }
       }
-      if (buf.length > 0 && [1, 3, 4].includes(buf[0]) && handleSS(ws, buf)) return;
-      try { ws.close(); } catch (e) {}
+      if (!handled && buf.length > 0 && [1, 3, 4].includes(buf[0]) && handleSS(ws, buf)) {
+        handled = true;
+      }
+      if (handled) {
+        ws.off('message', onFirst);   // ← 关键: 首包命中后移除自己
+      } else {
+        try { ws.close(); } catch (e) {}
+      }
     } catch (e) { /* ignore */ }
   };
   ws.on('message', onFirst);
