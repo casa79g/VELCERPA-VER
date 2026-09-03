@@ -73,14 +73,18 @@ function handleHTTP(req) {
       const wspath = WSPATHS.length > i ? WSPATHS[i] : (WSPATHS[0] || u);
       const nodeName = `CodeKit [${i + 1}]`;
       sub += generateSub('vless', u, wspath, nodeName) + '\n';
+      sub += generateSub('trojan', u, wspath, nodeName) + '\n';
+      sub += generateSub('shadowsocks', u, wspath, nodeName) + '\n';
     }
+    // 三协议订阅, base64 包裹 (客户端通用格式)
+    const subB64 = Buffer.from(sub).toString('base64');
     return {
       status: 200,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'subscription-userinfo': 'upload=0; download=0; total=0; expire=0',
       },
-      body: sub,
+      body: subB64 + '\n',
     };
   }
 
